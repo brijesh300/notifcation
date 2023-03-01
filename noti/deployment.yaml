@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kube-bench
+spec:
+  schedule: "*/2 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          nodeSelector:
+            environment: production
+          containers:
+          - name: kube-bench
+            image: docker.io/aquasec/kube-bench:v0.6.11
+            command: ["kube-bench"]
+            volumeMounts:
+            - name: config-volume
+              mountPath: /etc/kubernetes
+          restartPolicy: Never
+          volumes:
+          - name: config-volume
+            configMap:
+              name: kube-bench-config
+  successfulJobsHistoryLimit: 3
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-bench-config
+data:
+  CIS_VERSION: "1.6"
+  RUN_TESTS: "1"
+  ##ETCD_ENDPOINT: "https://etcd.example.com:2379"
+  ##KUBE_APISERVER: "https://api.example.com:6443"
+  KUBELET_CONFIG: "/etc/kubernetes/kubelet.conf"
+  KUBE_PROXY_CONFIG: "/etc/kubernetes/proxy.conf"
